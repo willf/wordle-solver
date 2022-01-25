@@ -29,6 +29,8 @@ To use the solver:
 echo 'badly' | python solver.py
 ```
 
+See `python solver.py -h` for more.
+
 etc.
 
 You can write your own Solver by subclassing `Solver`. The only required method is `guess`. I'm

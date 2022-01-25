@@ -377,9 +377,9 @@ if __name__ == "__main__":
 
     example_text = """examples:
 
- echo 'badly' | python solve.py
- echo 'badly' | python solve.py -v
- cat wordlist.txt | python solve.py"""
+ echo 'badly' | python solver.py
+ echo 'badly' | python solver.py -v
+ cat wordlist.txt | python solver.py"""
 
     parser = argparse.ArgumentParser(
         epilog=example_text,
