@@ -29,5 +29,5 @@ echo 'badly' | python solver.py
 
 etc.
 
-You can write your own Solver but subclassing `Solver`. The only required method is `guess`. I'm
+You can write your own Solver by subclassing `Solver`. The only required method is `guess`. I'm
 sure you'll write a better solver than I did. But I'm spent enough time on this already. :clock1: :vampire:
