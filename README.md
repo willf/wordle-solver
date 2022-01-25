@@ -4,6 +4,8 @@ A Python-based [Wordle](https://www.powerlanguage.co.uk/wordle/) solver and CLI 
 
 This was created using Python 3.9.7.
 
+SPOILER ALERT: the `data` directory contains spoilers for upcoming Wordle games. View at your own risk 😅.
+
 The only requirement, I think is for the [rich](https://pypi.org/project/rich/) libary, and that's just for the CLI.
 
 To play a game:
