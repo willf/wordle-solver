@@ -7,6 +7,7 @@ import json
 from collections import Counter
 import math
 import functools
+import argparse
 
 
 class Solver:
@@ -374,18 +375,33 @@ def union_all(l):
 
 if __name__ == "__main__":
 
-    # import doctest
+    example_text = """examples:
 
-    # print("Testing...")
-    # doctest.testmod()
-    # print("Done.")
+ echo 'badly' | python solve.py
+ echo 'badly' | python solve.py -v
+ cat wordlist.txt | python solve.py"""
+
+    parser = argparse.ArgumentParser(
+        epilog=example_text,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Wordle solver",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Run in verbose/debugging mode",
+        default=False,
+        action="store_true",
+    )
+    args = parser.parse_args()
 
     puzzles = sys.stdin.read().splitlines()
     start_time = time.time()
 
     solutions = []
     for game, puzzle in enumerate(puzzles):
-        # print(f"Solving puzzle {game}")
-        solutions.append(UltimaSolver(Wordle(target=puzzle), verbose=True).solve())
+        solutions.append(
+            UltimaSolver(Wordle(target=puzzle), verbose=args.verbose).solve()
+        )
     statistics = stats(solutions, start_time)
     print(json.dumps(statistics))
