@@ -47,10 +47,16 @@ class Solver:
             if is_valid:  # and not matches_solution:
                 self.update(guess, feedback)
             if self.verbose:
-                word_string = "; ".join(list(self.possible_solutions)[0:20])
+                word_string = "; ".join(
+                    sorted(
+                        list(self.possible_solutions)[0:20],
+                        key=self.wordhoard.frequency,
+                        reverse=True,
+                    )
+                )
                 if len(self.possible_solutions) > 20:
-                    word_string += "; ..."
-                status_string = f"{turn:2}. Guessing: {guess} {feedback} for {self.wordle.target} words left: {len(self.possible_solutions)}"
+                    word_string += "..."
+                status_string = f"{turn:2}. Guessing: {guess} {feedback} words left: {len(self.possible_solutions)}"
                 if len(self.possible_solutions) > 0:
                     status_string += f": {word_string}"
                 print(status_string)
@@ -333,7 +339,9 @@ class UltimaSolver(Solver):
             dls = "".join(sorted(difference))
             uls = "".join(sorted(union))
             ils = "".join(sorted(intersection))
-            print(f"    Union: {uls}  intersection: {ils}  difference: {dls}")
+            print(
+                f"                          > Union: {uls}  intersection: {ils}  difference: {dls}"
+            )
         possibles = [
             self.combine_word_information(word, 1, intersection, difference)
             for word in self.possible_solutions
