@@ -1,4 +1,4 @@
-# Wordle
+# Wordle Solver and CLI Player
 
 A Python-based [Wordle](https://www.powerlanguage.co.uk/wordle/) solver and CLI player
 
