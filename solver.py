@@ -299,7 +299,10 @@ class UltimaSolver(Solver):
         if len(self.possible_solutions) <= 4:
             # print("returning most frequent")
             return self.wordhoard.most_frequent_word(self.possible_solutions)
+        if self.wordle.turn() == 6:
+            return self.wordhoard.most_frequent_word(self.possible_solutions)
         if self.wordle.turn() == 1:
+            # return "arise"
             return "adieu"
         return self.best_word()
 
