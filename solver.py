@@ -32,6 +32,8 @@ class Solver:
 
     def solve(self):
         """Solve the puzzle, maybe"""
+        if self.verbose:
+            print(f"Target: {self.wordle.target}")
         start_time = time.time()
         is_over = False
         matches_solution = False
@@ -288,6 +290,29 @@ class OneWordReductionSolver(ReductionSolver):
         return super(OneWordReductionSolver, self).guess()
 
 
+class LarntSolver(Solver):
+    """
+    LARNT WEMBS SPICK VOZHD FUGLY
+    """
+
+    def guess(self):
+        if len(self.possible_solutions) == 1:
+            return list(self.possible_solutions)[0]
+        if self.wordle.turn() >= 6:
+            return self.wordhoard.most_frequent_word(self.possible_solutions)
+        t = self.wordle.turn()
+        if t == 1:
+            return "larnt"
+        if t == 2:
+            return "wembs"
+        if t == 3:
+            return "spick"
+        if t == 4:
+            return "vozhd"
+        if t == 5:
+            return "fugly"
+
+
 class UltimaSolver(Solver):
     """
     we'll see
@@ -304,6 +329,7 @@ class UltimaSolver(Solver):
         if self.wordle.turn() == 1:
             # return "arise"
             return "adieu"
+            # return "chart"
         return self.best_word()
 
     def known_letters(self):
