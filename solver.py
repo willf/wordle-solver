@@ -8,6 +8,19 @@ from collections import Counter
 import math
 import functools
 import argparse
+from rich import print
+
+
+def color_feedback(feedback, word):
+    cf = ""
+    for f, w in zip(feedback, word):
+        if f == "y":
+            cf += f"[yellow]{w}[/yellow]"
+        elif f == "g":
+            cf += f"[green]{w}[/green]"
+        else:
+            cf += f"[white]{w}[/white]"
+    return cf
 
 
 class Solver:
@@ -30,15 +43,20 @@ class Solver:
         self.max_counter = Counter()
         self.verbose = verbose
 
-    def solve(self):
+    def solve(self, guesses=[]):
         """Solve the puzzle, maybe"""
         if self.verbose:
             print(f"Target: {self.wordle.target}")
         start_time = time.time()
         is_over = False
         matches_solution = False
+        index = 0
         while not matches_solution:
-            guess = self.guess()
+            if index >= len(guesses):
+                guess = self.guess()
+            else:
+                guess = guesses[index]
+            index += 1
             (
                 matches_solution,
                 feedback,
@@ -58,7 +76,7 @@ class Solver:
                 )
                 if len(self.possible_solutions) > 20:
                     word_string += "..."
-                status_string = f"{turn:2}. Guessing: {guess} {feedback} words left: {len(self.possible_solutions)}"
+                status_string = f"{turn:2}. Guessing: {color_feedback(feedback,guess)} words left: {len(self.possible_solutions)}"
                 if len(self.possible_solutions) > 0:
                     status_string += f": {word_string}"
                 print(status_string)
@@ -430,15 +448,22 @@ if __name__ == "__main__":
         default=False,
         action="store_true",
     )
+    parser.add_argument("-g", "--guesses", help="Supplied Guesses", default=None)
+
     args = parser.parse_args()
 
     puzzles = sys.stdin.read().splitlines()
     start_time = time.time()
 
+    guesses = []
+    if args.guesses:
+        guesses = [guess.strip() for guess in args.guesses.split(",")]
     solutions = []
     for game, puzzle in enumerate(puzzles):
         solutions.append(
-            UltimaSolver(Wordle(target=puzzle), verbose=args.verbose).solve()
+            UltimaSolver(Wordle(target=puzzle), verbose=args.verbose).solve(
+                guesses=guesses
+            )
         )
     statistics = stats(solutions, start_time)
     print(json.dumps(statistics))
