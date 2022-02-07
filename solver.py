@@ -23,17 +23,24 @@ def color_feedback(feedback, word):
     return cf
 
 
+def vowel_count(word):
+    return sum(1 for c in word if c in "aeiou")
+
+
 class Solver:
     """A solver for Wordle puzzles"""
 
-    def __init__(self, wordle, verbose=False):
+    def __init__(self, wordle, verbose=False, wordhoard=None):
         self.wordle = wordle
-        self.wordhoard = WordHoard()
+        if wordhoard is None:
+            self.wordhoard = WordHoard()
+        else:
+            self.wordhoard = wordhoard
         self.possible_solutions = set(
             [
                 word
                 for word in self.wordhoard.words
-                if self.wordhoard.frequency(word) >= 7500
+                # if self.wordhoard.frequency(word) >= 7500
             ]
         )
         self.forbidden_letters = set()
@@ -345,9 +352,10 @@ class UltimaSolver(Solver):
         if self.wordle.turn() == 6:
             return self.wordhoard.most_frequent_word(self.possible_solutions)
         if self.wordle.turn() == 1:
-            # return "arise"
-            return "adieu"
-            # return "chart"
+            if "adieu" in self.possible_solutions:
+                return "adieu"
+            guess = max(self.possible_solutions, key=lambda x: vowel_count(x))
+            return guess
         return self.best_word()
 
     def known_letters(self):
@@ -450,10 +458,16 @@ if __name__ == "__main__":
     )
     parser.add_argument("-g", "--guesses", help="Supplied Guesses", default=None)
 
+    parser.add_argument("-w", "--words", help="Supplied Words", default=None)
+
     args = parser.parse_args()
 
     puzzles = sys.stdin.read().splitlines()
     start_time = time.time()
+
+    wordhoard = None
+    if args.words:
+        wordhoard = WordHoard(file=args.words)
 
     guesses = []
     if args.guesses:
@@ -461,9 +475,11 @@ if __name__ == "__main__":
     solutions = []
     for game, puzzle in enumerate(puzzles):
         solutions.append(
-            UltimaSolver(Wordle(target=puzzle), verbose=args.verbose).solve(
-                guesses=guesses
-            )
+            UltimaSolver(
+                Wordle(target=puzzle, wordhoard=wordhoard),
+                verbose=args.verbose,
+                wordhoard=wordhoard,
+            ).solve(guesses=guesses)
         )
     statistics = stats(solutions, start_time)
     print(json.dumps(statistics))

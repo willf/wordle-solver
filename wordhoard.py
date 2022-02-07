@@ -6,16 +6,25 @@ from functools import lru_cache
 from globals import FREQ_FILE
 
 
+def split_line(line):
+    parts = line.strip().split("\t")
+    if len(parts) == 1:
+        return parts[0], 1
+    else:
+        return parts[0], int(parts[1])
+
+
 class WordHoard:
     def __init__(self, file=FREQ_FILE):
+        if file is None:
+            file = FREQ_FILE
         self.frequencies = self.read_words_and_frequencies(file)
         self.words = set(self.frequencies.keys())
 
     def read_words_and_frequencies(self, file):
         """Read a file of words and frequencies, return a dict of words and frequencies"""
-        l = lambda x: x.strip().split("\t")
-        p = lambda x: (x[0], int(x[1]))
-        return dict([p(l(line)) for line in open(file)])
+
+        return dict([split_line(line) for line in open(file)])
 
     def frequency(self, word):
         """Return the frequency of a given word, 0 if not found"
