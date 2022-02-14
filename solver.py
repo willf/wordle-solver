@@ -91,7 +91,6 @@ class Solver:
             "target": self.wordle.target,
             "solver": self.__class__.__name__,
             "number_guesses": len(self.wordle.guesses()),
-            "no_solution": is_over,
             "won": matches_solution
             and len(self.wordle.guesses()) <= self.wordle.max_turns(),
             "found": matches_solution,
