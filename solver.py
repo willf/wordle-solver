@@ -11,6 +11,10 @@ import argparse
 from rich import print
 
 
+def union_all(sets):
+    return functools.reduce(lambda a, b: a.union(b), sets)
+
+
 def color_feedback(feedback, word):
     cf = ""
     for f, w in zip(feedback, word):
@@ -46,7 +50,7 @@ class Solver:
         self.forbidden_letters = set()
         self.required_letters = set()
         self.greens = ["·"] * wordle.size
-        self.yellows = ["·"] * wordle.size
+        self.yellows = [set() for i in range(wordle.size)]
         self.max_counter = Counter()
         self.verbose = verbose
 
@@ -83,7 +87,7 @@ class Solver:
                 )
                 if len(self.possible_solutions) > 20:
                     word_string += "..."
-                status_string = f"{turn:2}. Guessing: {color_feedback(feedback,guess)} words left: {len(self.possible_solutions)}"
+                status_string = f"{turn:2}. Guessing: {color_feedback(feedback,guess)}/{color_feedback(feedback, feedback)} words left: {len(self.possible_solutions)}"
                 if len(self.possible_solutions) > 0:
                     status_string += f": {word_string}"
                 print(status_string)
@@ -104,6 +108,22 @@ class Solver:
         """Make a guess"""
         g = self.wordhoard.most_frequent_word(self.possible_solutions)
         return g
+
+    def valid_hard_word(self, guess):
+        """Check if a guess is a valid hard word"""
+        return self.valid_for_greens(guess) and self.valid_for_yellow(guess)
+
+    def valid_for_greens(self, guess):
+        """Check if a guess is valid for the green pattern"""
+        return all(
+            letter == self.greens[location]
+            for location, letter in enumerate(guess)
+            if letter != "·"
+        )
+
+    def valid_for_yellow(self, guess):
+        """Check if a guess is valid for what we know about yellows"""
+        return all(letter in guess for letter in union_all(self.yellows))
 
     def update(self, guess, feedback):
         self.update_pattern(guess, feedback)
@@ -134,7 +154,8 @@ class Solver:
             if fb.lower() == "·":
                 letter = guess[location]
                 yellow_greens = (
-                    Counter(self.yellows)[letter] + Counter(self.greens)[letter]
+                    Counter(union_all(self.yellows))[letter]
+                    + Counter(self.greens)[letter]
                 )
                 if yellow_greens == 0:
                     self.forbidden_letters.add(letter)
@@ -151,7 +172,7 @@ class Solver:
                 self.required_letters.add(guess[location])
                 self.max_counter[guess[location]] += 1
             if letter.lower() == "y":
-                self.yellows[location] = guess[location]
+                self.yellows[location].add(guess[location])
 
     def update_possible_solutions(self, guess):
         """Update the possible solutions.
@@ -272,8 +293,9 @@ class ReductionSolver(Solver):
     def best_word(self):
         """Return the best words"""
         mfl = set(self.wordhoard.most_frequent_letters(self.possible_solutions, n=26))
-        known_letters = set(self.greens).union(self.yellows)
+        known_letters = set(self.greens).union(union_all(self.yellows))
         required_letters = mfl.difference(known_letters)
+
         cmp = [
             (
                 len(set(word).intersection(required_letters)),
@@ -281,7 +303,9 @@ class ReductionSolver(Solver):
                 word,
             )
             for word in self.possible_solutions
+            if self.valid_hard_word(word)
         ]
+
         guess_pair = max(cmp)
         return guess_pair[2]
 
@@ -343,19 +367,22 @@ class UltimaSolver(Solver):
     """
 
     def guess(self):
-        if len(self.possible_solutions) == 1:
-            return list(self.possible_solutions)[0]
-        if len(self.possible_solutions) <= 4:
+        words = [word for word in self.possible_solutions if self.valid_hard_word(word)]
+        if len(words) == 0:
+            words = self.possible_solutions
+        if len(words) == 1:
+            return list(words)[0]
+        if len(words) <= 4:
             # print("returning most frequent")
-            return self.wordhoard.most_frequent_word(self.possible_solutions)
+            return self.wordhoard.most_frequent_word(words)
         if self.wordle.turn() == 6:
-            return self.wordhoard.most_frequent_word(self.possible_solutions)
+            return self.wordhoard.most_frequent_word(words)
         if self.wordle.turn() == 1:
-            if "adieu" in self.possible_solutions:
+            if "adieu" in words:
                 return "adieu"
-            guess = max(self.possible_solutions, key=lambda x: vowel_count(x))
+            guess = max(words, key=lambda x: vowel_count(x))
             return guess
-        return self.best_word()
+        return self.best_word(words)
 
     def known_letters(self):
         return set(self.forbidden_letters).union(self.required_letters)
@@ -381,11 +408,11 @@ class UltimaSolver(Solver):
         entropy = self.word_entropy_without_known_letters(word, intersection)
         return (number_of_differences_in_word, entropy, freq, n, word)
 
-    def all_word_informations(self):
-        word_sets = [set(w) for w in self.possible_solutions]
+    def all_word_information(self, words):
+        word_sets = [set(w) for w in words]
         intersection = intersect_all(word_sets)
         if len(intersection) == self.wordle.size:  # all words are the same set!
-            the_word = self.wordhoard.most_frequent_word(self.possible_solutions)
+            the_word = self.wordhoard.most_frequent_word(words)
             return [(0, 0, self.wordhoard.frequency(the_word), 1, the_word)]
         union = union_all(word_sets)
         difference = union.difference(intersection)
@@ -398,33 +425,26 @@ class UltimaSolver(Solver):
             )
         possibles = [
             self.combine_word_information(word, 1, intersection, difference)
-            for word in self.possible_solutions
+            for word in words
         ]
         other_words = [
             word
             for word in self.wordle.words.difference(self.wordle.guesses())
-            if self.wordhoard.frequency(word) >= 100_000
+            if self.wordhoard.frequency(word) >= 100_000 and self.valid_hard_word(word)
         ]
         others = [
             self.combine_word_information(word, 0, intersection, difference)
             for word in other_words
         ]
+
         return possibles + others
 
-    def best_word(self):
+    def best_word(self, words):
         "best of all possible worlds"
-        # word_sets = [set(w) for w in self.possible_solutions]
-        # intersection = intersect_all(word_sets)
-        # union = union_all(word_sets)
-        # difference = union.difference(intersection)
-        # dls = "".join(sorted(difference))
-        # uls = "".join(sorted(union))
-        # ils = "".join(sorted(intersection))
-        # print(f"    Union: {uls}  intersection: {ils}  difference: {dls}")
-        cmp = self.all_word_informations()
+        cmp = self.all_word_information(words)
         m = max(cmp)
-        # print(f"    Best of all possible words {m}")
-        return m[4]
+        w = m[4]
+        return w
 
 
 def intersect_all(l):
