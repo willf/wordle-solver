@@ -1,5 +1,5 @@
 from os import posix_spawn
-from re import U
+import re
 from wordhoard import *
 from wordle import *
 import time
@@ -118,7 +118,7 @@ class Solver:
         return all(
             letter == self.greens[location]
             for location, letter in enumerate(guess)
-            if letter != "·"
+            if self.greens[location] != "·"
         )
 
     def valid_for_yellow(self, guess):
@@ -367,13 +367,16 @@ class UltimaSolver(Solver):
     """
 
     def guess(self):
-        words = [word for word in self.possible_solutions if self.valid_hard_word(word)]
+        words = self.possible_solutions
+        if self.wordle.turn() > 1:
+            words = [word for word in words if self.valid_hard_word(word)]
+
         if len(words) == 0:
             words = self.possible_solutions
         if len(words) == 1:
             return list(words)[0]
         if len(words) <= 4:
-            # print("returning most frequent")
+            print("returning most frequent")
             return self.wordhoard.most_frequent_word(words)
         if self.wordle.turn() == 6:
             return self.wordhoard.most_frequent_word(words)
