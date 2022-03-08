@@ -29,6 +29,14 @@ To use the solver:
 echo 'badly' | python solver.py
 ```
 
+To select a start word, use the `-g` flag:
+
+```base
+echo 'badly' | python solver.py -g 'adieu' -v
+```
+
+To use Peter Norvig's [four guesses](https://github.com/norvig/pytudes/blob/main/ipynb/Wordle.ipynb), use the `--norvig` flag.
+
 See `python solver.py -h` for more.
 
 etc.
