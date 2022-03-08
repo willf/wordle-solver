@@ -32,7 +32,7 @@ class Wordle:
             assert target in self.words
             self.target = target
         else:
-            frequent = self.wordhoard.frequent_words(size)
+            # frequent = self.wordhoard.words_with_frequency(size)
             self.target = random.choice(list(self.words))
         self._turn = 1
         self._max_turns = max_turns
