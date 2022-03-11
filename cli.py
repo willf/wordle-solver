@@ -25,13 +25,13 @@ def color_feedback(feedback):
 
 def color_feedback_and_word(feedback, word):
     cf = ""
-    for f, w in zip(feedback, word):
+    for f, w in zip(feedback, word.upper()):
         if f == "y":
-            cf += f"[yellow]{w}[/yellow]"
+            cf += f"[yellow bold]{w}[/yellow bold]"
         elif f == "g":
-            cf += f"[green]{w}[/green]"
+            cf += f"[green bold]{w}[/green bold]"
         else:
-            cf += f"[white]{w}[/white]"
+            cf += f"[strike]{w}[/strike]"
     return cf
 
 
@@ -51,7 +51,7 @@ while not finished:
     if (is_over and is_valid) or matches_solution:
         finished = True
     if not is_valid:
-        print(f"[red]{guess}[/red] is not a valid guess")
+        print(f"[red]{guess.upper()}[/red] is not a valid guess")
     if (is_over and is_valid) and not matches_solution:
         print(f"\nAnswer was: [green]{w.target}[/green]")
 

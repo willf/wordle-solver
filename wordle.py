@@ -26,6 +26,7 @@ class Wordle:
         else:
             self.wordhoard = wordhoard
         words = self.wordhoard.words
+
         assert all(len(word) == size for word in words)
         self.words = words
         if target:

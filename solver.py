@@ -183,9 +183,9 @@ if __name__ == "__main__":
 
     example_text = """examples:
 
- echo 'badly' | python solver.py
- echo 'badly' | python solver.py -v
- cat wordlist.txt | python solver.py"""
+     echo 'badly' | python solver.py
+     echo 'badly' | python solver.py -v
+     cat wordlist.txt | python solver.py"""
 
     parser = argparse.ArgumentParser(
         epilog=example_text,
@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    puzzles = sys.stdin.read().splitlines()
+    # puzzles = sys.stdin.read().splitlines()
     start_time = time.time()
 
     wordhoard = None
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     if args.norvig:
         guesses = "handy,swift,glove,crump".split(",")
     solutions = []
-    for game, puzzle in enumerate(puzzles):
+    for game, puzzle in enumerate(sys.stdin):
         solutions.append(
             Solver(
                 Wordle(target=puzzle.strip(), wordhoard=wordhoard),
