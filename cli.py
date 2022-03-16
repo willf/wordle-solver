@@ -40,6 +40,46 @@ print("Welcome to Wordle!")
 finished = False
 turn = 1
 good_guesses = []
+forbidden_letters = set()
+required_letters = set()
+matched_letters = set()
+
+
+def update_stuff(feedback, guess):
+    global matched_letters
+    global required_letters
+    global forbidden_letters
+    for f, w in zip(feedback, guess.upper()):
+        if f == "g":
+            matched_letters.add(w)
+        elif f == "y":
+            required_letters.add(w)
+        else:
+            forbidden_letters.add(w)
+
+
+def letter_status(letter):
+    global matched_letters
+    global required_letters
+    global forbidden_letters
+    if letter in matched_letters:
+        return f"[green bold]{letter}[/green bold]"
+    elif letter in forbidden_letters:
+        return "_"
+    elif letter in required_letters:
+        return f"[yellow bold]{letter}[/yellow bold]"
+    else:
+        return letter
+
+
+def alphabet():
+    return "".join(
+        [letter_status(w) for w in "AEIOU"]
+        + [" / "]
+        + [letter_status(w) for w in "BCDFGHJKLMNPQRSTVWXYZ"]
+    )
+
+
 while not finished:
     guess = input(f" {turn:2}. Guess a word: ")
     matches_solution, feedback, _, is_valid, is_over = w.make_guess(guess)
@@ -47,7 +87,10 @@ while not finished:
     if is_valid:
         turn += 1
         good_guesses.append(guess)
-        print(f"                   {color_feedback_and_word(feedback, guess)}")
+        update_stuff(feedback, guess)
+        print(
+            f"                   {color_feedback_and_word(feedback, guess)} : {alphabet()}"
+        )
     if (is_over and is_valid) or matches_solution:
         finished = True
     if not is_valid:
