@@ -1,3 +1,4 @@
+from xml.etree.ElementInclude import include
 from wordhoard import *
 from wordle import *
 import time
@@ -21,7 +22,7 @@ def color_feedback(feedback, word):
     return cf
 
 
-def stats(solutions, start_time):
+def stats(solutions, start_time, include_solutions=False):
     n = len(solutions)
     number_solved = len(
         list(solution for solution in solutions if solution.get("won") == True)
@@ -40,18 +41,31 @@ def stats(solutions, start_time):
         average_guesses = sum(counts) / n
         max_guesses = max(counts)
         min_guesses = min(counts)
-    return {
-        "number_played": n,
-        "number_solved": number_solved,
-        "percent_solved": percent_solved,
-        "failure_rate": 1 - percent_solved,
-        "number_no_solutions": number_no_solutions,
-        "average_guesses": average_guesses,
-        "max_guesses": max_guesses,
-        "min_guesses": min_guesses,
-        "elapsed_time": time.time() - start_time,
-        "solutions": solutions,
-    }
+    if include_solutions:
+        return {
+            "number_played": n,
+            "number_solved": number_solved,
+            "percent_solved": percent_solved,
+            "failure_rate": 1 - percent_solved,
+            "number_no_solutions": number_no_solutions,
+            "average_guesses": average_guesses,
+            "max_guesses": max_guesses,
+            "min_guesses": min_guesses,
+            "elapsed_time": time.time() - start_time,
+            "solutions": solutions,
+        }
+    else:
+        return {
+            "number_played": n,
+            "number_solved": number_solved,
+            "percent_solved": percent_solved,
+            "failure_rate": 1 - percent_solved,
+            "number_no_solutions": number_no_solutions,
+            "average_guesses": average_guesses,
+            "max_guesses": max_guesses,
+            "min_guesses": min_guesses,
+            "elapsed_time": time.time() - start_time,
+        }
 
 
 class WordleKnowledge:
