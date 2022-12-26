@@ -1,8 +1,10 @@
-import os, sys
+import os
 import random
-from wordhoard import WordHoard
+import sys
 from collections import Counter
+
 from globals import FREQ_FILE, SOLUTION_FILE
+from wordhoard import WordHoard
 
 WORD_SIZE = 5
 
@@ -30,6 +32,9 @@ class Wordle:
         assert all(len(word) == size for word in words)
         self.words = words
         if target:
+            if target not in self.words:
+                print(f"Target word {target} not in word list")
+                sys.exit(1)
             assert target in self.words
             self.target = target
         else:
