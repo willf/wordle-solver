@@ -1,13 +1,15 @@
+import argparse
+import functools
+import json
+import math
+import time
+from collections import Counter
 from xml.etree.ElementInclude import include
+
+from rich import print
+
 from wordhoard import *
 from wordle import *
-import time
-import json
-from collections import Counter
-import math
-import functools
-import argparse
-from rich import print
 
 
 def color_feedback(feedback, word):
@@ -68,47 +70,10 @@ def stats(solutions, start_time, include_solutions=False):
         }
 
 
-class WordleKnowledge:
-    def __init__(self, wordle, wordhoard):
-        self.counter = Counter()
-        for word in wordhoard.words:
-            for letter in word:
-                self.counter[letter] += 1
-        letters = sorted(self.counter.keys())
-        self.letter_sets = [set(letters) for i in range(wordle.size)]
-        self.required_letters = set()
-        self.wordle = wordle
-        self.wordhoard = wordhoard
-
-    def is_consistent(self, word):
-        for i in range(self.wordle.size):
-            letter = word[i]
-            letter_set = self.letter_sets[i]
-            found = letter in letter_set
-            if not found:
-                return False
-        return all(letter in word for letter in self.required_letters)
-
-    def update_exact(self, letter, position):
-        self.required_letters.add(letter)
-        self.letter_sets[position] = set(letter)
-
-    def update_required(self, letter, position):
-        self.required_letters.add(letter)
-        if letter in self.letter_sets[position]:
-            self.letter_sets[position].remove(letter)
-
-    def update_forbidden(self, letter, position):
-        for letter_set in self.letter_sets:
-            if letter in letter_set and letter not in self.required_letters:
-                letter_set.remove(letter)
-
-    def __repr__(self):
-        return f"{self.required_letters} {self.letter_sets}"
 
 
 class Solver:
-    """ 
+    """
     Solver class for the wordle puzzle
     """
 
@@ -119,26 +84,12 @@ class Solver:
         else:
             self.wordhoard = wordhoard
         self.verbose = verbose
-        self.state = WordleKnowledge(wordle, self.wordhoard)
-        self.possible_solutions = set(self.wordhoard.words)
 
     def update_knowledge(self, guess, feedback):
-        """Update the knowledge of the wordle puzzle
-        """
-        # print(f"[bold blue]{guess}[/bold blue]; {color_feedback(feedback, guess)}")
-        for i in range(self.wordle.size):
-            if feedback[i] == "g":
-                self.state.update_exact(guess[i], i)
-            elif feedback[i] == "y":
-                self.state.update_required(guess[i], i)
-            else:
-                self.state.update_forbidden(guess[i], i)
-        self.possible_solutions = [
-            word
-            for word in self.possible_solutions
-            if self.state.is_consistent(word) and word != guess
-        ]
-        # print(f"{len(self.possible_solutions)} possible solutions")
+        pass
+
+    def possible_solutions(self):
+        return self.wordhoard.words
 
     def solve(self, guesses=[], max_turns=math.inf):
         """Solve the wordle puzzle, maybe"""
@@ -160,15 +111,15 @@ class Solver:
             if self.verbose:
                 word_string = "; ".join(
                     sorted(
-                        list(self.possible_solutions)[0:20],
+                        list(self.possible_solutions())[0:20],
                         key=self.wordhoard.frequency,
                         reverse=True,
                     )
                 )
-                if len(self.possible_solutions) > 20:
+                if len(self.possible_solutions()) > 20:
                     word_string += "..."
-                status_string = f"{turn:2}. Target: {self.wordle.target} Guessing: {color_feedback(feedback,guess)}/{color_feedback(feedback, feedback)} words left: {len(self.possible_solutions)}"
-                if len(self.possible_solutions) > 0:
+                status_string = f"{turn:2}. Target: {self.wordle.target} Guessing: {color_feedback(feedback,guess)}/{color_feedback(feedback, feedback)} words left: {len(self.possible_solutions())}"
+                if len(self.possible_solutions()) > 0:
                     status_string += f": {word_string}"
                 print(status_string)
 
@@ -180,18 +131,30 @@ class Solver:
             "found": solved,
             "guesses": self.wordle.guesses(),
             "word_count": len(self.wordle.words),
-            "words_left": len(self.possible_solutions),
+            "words_left": len(self.possible_solutions()),
             "elapsed_time": time.time() - start_time,
         }
 
     def guess(self):
         """Make a guess"""
-        return self.wordhoard.most_frequent_word(self.possible_solutions)
+        raise NotImplementedError("Guess not implemented")
 
+
+
+def create_solver(solver_name, wordle, wordhoard=None, verbose=False):
+    """Create a solver by name"""
+    if solver_name == "random":
+        from random_solver import RandomSolver
+        return RandomSolver(wordle, wordhoard, verbose)
+    elif solver_name == "frequency":
+        from frequency_based_solver import FrequencyBasedSolver
+        return FrequencyBasedSolver(wordle, wordhoard, verbose)
+    else:
+        raise ValueError(f"Unknown solver: {solver_name}")
 
 if __name__ == "__main__":
 
-    from signal import signal, SIGPIPE, SIG_DFL
+    from signal import SIG_DFL, SIGPIPE, signal
 
     signal(SIGPIPE, SIG_DFL)
 
@@ -223,6 +186,8 @@ if __name__ == "__main__":
 
     parser.add_argument("-w", "--words", help="Supplied Words", default=None)
 
+    parser.add_argument('-s', '--solver', help='Solver class (frequency, random)', default='frequency' )
+
     args = parser.parse_args()
 
     # puzzles = sys.stdin.read().splitlines()
@@ -239,12 +204,7 @@ if __name__ == "__main__":
         guesses = "handy,swift,glove,crump".split(",")
     solutions = []
     for game, puzzle in enumerate(sys.stdin):
-        solutions.append(
-            Solver(
-                Wordle(target=puzzle.strip(), wordhoard=wordhoard),
-                verbose=args.verbose,
-                wordhoard=wordhoard,
-            ).solve(guesses=guesses)
-        )
+        solver = create_solver(args.solver, Wordle(target=puzzle.strip(), wordhoard=wordhoard), wordhoard, args.verbose)
+        solutions.append(solver.solve(guesses=guesses))
     statistics = stats(solutions, start_time)
     print(json.dumps(statistics))
