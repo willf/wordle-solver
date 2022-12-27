@@ -1,10 +1,7 @@
 import argparse
-import functools
 import json
 import math
 import time
-from collections import Counter
-from xml.etree.ElementInclude import include
 
 from rich import print
 
@@ -84,9 +81,10 @@ class Solver:
         else:
             self.wordhoard = wordhoard
         self.verbose = verbose
+        self.guesses = []
 
-    def update_knowledge(self, guess, feedback):
-        pass
+    def update(self, guess, feedback):
+        self.guesses += [guess]
 
     def possible_solutions(self):
         return self.wordhoard.words
@@ -107,7 +105,7 @@ class Solver:
             (solved, feedback, turn, is_valid, is_over,) = self.wordle.make_guess(guess)
 
             if is_valid:
-                self.update_knowledge(guess, feedback)
+                self.update(guess, feedback)
             if self.verbose:
                 word_string = "; ".join(
                     sorted(
@@ -141,14 +139,20 @@ class Solver:
 
 
 
-def create_solver(solver_name, wordle, wordhoard=None, verbose=False):
+def create_solver(solver_name, wordle, wordhoard, opts):
     """Create a solver by name"""
     if solver_name == "random":
         from random_solver import RandomSolver
-        return RandomSolver(wordle, wordhoard, verbose)
+        return RandomSolver(wordle, wordhoard, opts.verbose)
     elif solver_name == "frequency":
         from frequency_based_solver import FrequencyBasedSolver
-        return FrequencyBasedSolver(wordle, wordhoard, verbose)
+        return FrequencyBasedSolver(wordle, wordhoard, opts.verbose)
+    elif solver_name == "ir":
+        from ir_solver import InfoTheoreticSolver
+        return InfoTheoreticSolver(wordle, wordhoard, opts.verbose, opts.mode, opts.top_n)
+    elif solver_name == "norvig":
+        from norvig_solver import NorvigSolver
+        return NorvigSolver(wordle, wordhoard, opts.verbose)
     else:
         raise ValueError(f"Unknown solver: {solver_name}")
 
@@ -176,19 +180,24 @@ if __name__ == "__main__":
         default=False,
         action="store_true",
     )
-    parser.add_argument(
-        "--norvig",
-        help="Use the Norvig list: handy, swift, glove, crump",
-        default=False,
-        action="store_true",
-    )
+
     parser.add_argument("-g", "--guesses", help="Supplied Guesses", default=None)
 
     parser.add_argument("-w", "--words", help="Supplied Words", default=None)
 
     parser.add_argument('-s', '--solver', help='Solver class (frequency, random)', default='frequency' )
 
+    parser.add_argument('-m', '--mode', help='Mode (hard/easy)', default='easy' )
+
+    parser.add_argument('-n', '--top_n', help='Top N words to use', default=4500, type=int )
+
     args = parser.parse_args()
+    if args.mode not in ['easy', 'hard']:
+        raise ValueError(f"Unknown mode: {args.mode}")
+    args.easy_mode = args.mode == 'easy'
+    if args.solver not in ['frequency', 'random', 'ir', 'norvig']:
+        raise ValueError(f"Unknown solver: {args.solver}")
+
 
     # puzzles = sys.stdin.read().splitlines()
     start_time = time.time()
@@ -200,11 +209,9 @@ if __name__ == "__main__":
     guesses = []
     if args.guesses:
         guesses = [guess.strip() for guess in args.guesses.split(",")]
-    if args.norvig:
-        guesses = "handy,swift,glove,crump".split(",")
     solutions = []
     for game, puzzle in enumerate(sys.stdin):
-        solver = create_solver(args.solver, Wordle(target=puzzle.strip(), wordhoard=wordhoard), wordhoard, args.verbose)
+        solver = create_solver(args.solver, Wordle(target=puzzle.strip(), wordhoard=wordhoard), wordhoard, args)
         solutions.append(solver.solve(guesses=guesses))
     statistics = stats(solutions, start_time)
     print(json.dumps(statistics))

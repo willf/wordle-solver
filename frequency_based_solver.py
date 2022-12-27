@@ -2,45 +2,8 @@
 from collections import Counter
 
 from solver import Solver
+from wordle_knowledge import WordleKnowledge
 
-
-class WordleKnowledge:
-    def __init__(self, wordle, wordhoard):
-        self.counter = Counter()
-        for word in wordhoard.words:
-            for letter in word:
-                self.counter[letter] += 1
-        letters = sorted(self.counter.keys())
-        self.letter_sets = [set(letters) for i in range(wordle.size)]
-        self.required_letters = set()
-        self.wordle = wordle
-        self.wordhoard = wordhoard
-
-    def is_consistent(self, word):
-        for i in range(self.wordle.size):
-            letter = word[i]
-            letter_set = self.letter_sets[i]
-            found = letter in letter_set
-            if not found:
-                return False
-        return all(letter in word for letter in self.required_letters)
-
-    def update_exact(self, letter, position):
-        self.required_letters.add(letter)
-        self.letter_sets[position] = set(letter)
-
-    def update_required(self, letter, position):
-        self.required_letters.add(letter)
-        if letter in self.letter_sets[position]:
-            self.letter_sets[position].remove(letter)
-
-    def update_forbidden(self, letter, position):
-        for letter_set in self.letter_sets:
-            if letter in letter_set and letter not in self.required_letters:
-                letter_set.remove(letter)
-
-    def __repr__(self):
-        return f"{self.required_letters} {self.letter_sets}"
 
 class FrequencyBasedSolver(Solver):
 
@@ -49,17 +12,13 @@ class FrequencyBasedSolver(Solver):
     self.possible_solutions_list = set(self.wordhoard.words)
     self.state = WordleKnowledge(wordle, self.wordhoard)
 
-  def update_knowledge(self, guess, feedback):
+  def update(self, guess, feedback):
         """Update the knowledge of the wordle puzzle
         """
+        # call the super method
+        super().update(guess, feedback)
         # print(f"[bold blue]{guess}[/bold blue]; {color_feedback(feedback, guess)}")
-        for i in range(self.wordle.size):
-            if feedback[i] == "g":
-                self.state.update_exact(guess[i], i)
-            elif feedback[i] == "y":
-                self.state.update_required(guess[i], i)
-            else:
-                self.state.update_forbidden(guess[i], i)
+        self.state.update(guess, feedback)
         self.possible_solutions_list = [
             word
             for word in self.possible_solutions_list

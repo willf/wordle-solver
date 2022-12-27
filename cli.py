@@ -1,8 +1,10 @@
-from hashlib import new
-from wordle import Wordle, wordle_number
-from rich import print
 import argparse
 import random
+from hashlib import new
+
+from rich import print
+
+from wordle import Wordle, wordle_number
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -79,6 +81,7 @@ def alphabet():
         + [letter_status(w) for w in "BCDFGHJKLMNPQRSTVWXYZ"]
     )
 
+matches_solution = False
 
 while not finished:
     guess = input(f" {turn:2}. Guess a word: ")

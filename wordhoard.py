@@ -1,8 +1,10 @@
-import os, sys
+import os
 import random
+import sys
 from collections import Counter
-from typing import OrderedDict
 from functools import lru_cache
+from typing import OrderedDict
+
 from globals import FREQ_FILE
 
 
@@ -74,6 +76,14 @@ class WordHoard:
         'every'
         """
         return max(words, key=lambda word: self.frequencies.get(word, 0))
+
+    def most_frequent_words(self, n=10):
+        """Return the most frequent words in a list of words
+        >>> wh = WordHoard(FREQ_FILE)
+        >>> wh.most_frequent_words(["every", "audio", "ZZZZZ"], 2)
+        ['every', 'audio']
+        """
+        return sorted(self.words, key=lambda word: self.frequencies.get(word, 0), reverse=True)[0:n]
 
     def words_with_frequency(self, frequency=10000):
         return [w for w, f in self.frequencies.items() if f >= frequency]
