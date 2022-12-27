@@ -31,12 +31,12 @@ args.mode = 'easy'
 args.top_n = 4500
 solver = create_solver(args.solver, Wordle(), WordHoard(), args)
 for guess in guesses:
-  print(f"Guess: {guess} feedback? >",)
+  print(f"Guess: {guess} feedback? >", end=' ')
   feedback = sys.stdin.readline().strip().lower()
   solver.update(guess, feedback)
 while True and solver.possible_solutions() and feedback != 'ggggg':
   guess = solver.guess()
-  print(f"Guess: {guess} feedback? >",)
+  print(f"Guess: {guess} feedback? >", end=' ')
   feedback = sys.stdin.readline().strip().lower()
   solver.update(guess, feedback)
 
