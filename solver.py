@@ -153,6 +153,9 @@ def create_solver(solver_name, wordle, wordhoard, opts):
     elif solver_name == "norvig":
         from norvig_solver import NorvigSolver
         return NorvigSolver(wordle, wordhoard, opts.verbose)
+    elif solver_name == "worst":
+        from worst_solver import WorstSolver
+        return WorstSolver(wordle, wordhoard, opts.verbose)
     else:
         raise ValueError(f"Unknown solver: {solver_name}")
 
@@ -185,7 +188,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-w", "--words", help="Supplied Words", default=None)
 
-    parser.add_argument('-s', '--solver', help='Solver class (frequency, random)', default='frequency' )
+    parser.add_argument('-s', '--solver', help='Solver class (frequency, ir, norvig, random, worst)', default='frequency' )
 
     parser.add_argument('-m', '--mode', help='Mode (hard/easy)', default='easy' )
 
@@ -195,7 +198,7 @@ if __name__ == "__main__":
     if args.mode not in ['easy', 'hard']:
         raise ValueError(f"Unknown mode: {args.mode}")
     args.easy_mode = args.mode == 'easy'
-    if args.solver not in ['frequency', 'random', 'ir', 'norvig']:
+    if args.solver not in ['frequency', 'random', 'ir', 'norvig', 'worst']:
         raise ValueError(f"Unknown solver: {args.solver}")
 
 
